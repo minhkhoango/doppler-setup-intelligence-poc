@@ -1,3 +1,0 @@
-doppler_poc
-sample_projects
-tests
