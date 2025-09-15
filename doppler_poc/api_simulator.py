@@ -18,7 +18,7 @@ def simulate_api_calls(project_name: str, config_names: List[str]) -> None:
     print("\n--- [API Call Simulation] ---")
     print(f"1. Check if project '{project_name}' exists...")
     print(f"2. Project does not exist. Creating project: '{project_name}'")
-    print(f"   POST /v3/projects")
+    print("   POST /v3/projects")
     print(f"   BODY: {{'name': '{project_name}'}}")
     for i, config_name in enumerate(config_names):
         print(f"{i+3}. Creating config: '{config_name}'")

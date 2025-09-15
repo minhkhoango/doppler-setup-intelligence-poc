@@ -3,55 +3,65 @@ Unit tests for the project structure detectors.
 """
 
 from pathlib import Path
-from typing import List, Optional
-import pytest
-
-from doppler_poc.detectors import detect_docker_compose, detect_node_monorepo
+from doppler_poc.detectors import detect_project
+from doppler_poc.models import ProjectType
 
 
-def test_detects_docker_compose_services() -> None:
+def test_detects_docker_compose_project_correctly() -> None:
     """
-    Tests that the detector finds and parses a docker-compose.yml file.
-    """
-    # Arrange
-    sample_project_path = Path(__file__).parent.parent / "sample_projects" / "docker_compose_simple"
-    expected_services: List[str] = ["web", "api", "worker"]
-
-    # Act
-    detected_services: Optional[List[str]] = detect_docker_compose(str(sample_project_path))
-
-    # Assert
-    assert detected_services is not None
-    assert sorted(detected_services) == sorted(expected_services)
-
-
-def test_detects_node_monorepo_packages() -> None:
-    """
-    Tests that the detector finds and parses a Node.js monorepo structure.
+    Tests that the detector finds, parses, and correctly structures
+    a docker-compose.yml project.
     """
     # Arrange
-    sample_project_path = Path(__file__).parent.parent / "sample_projects" / "node_monorepo"
-    expected_packages: List[str] = ["frontend", "backend"]
+    # Path(__file__) is the path to this test file. .parent gets the 'tests' dir.
+    # .parent.parent gets the project root.
+    sample_project_path = (
+        Path(__file__).parent.parent / "sample_projects" / "docker_compose_simple"
+    )
+    expected_configs = ["web", "api", "worker"]
 
     # Act
-    detected_packages: Optional[List[str]] = detect_node_monorepo(str(sample_project_path))
+    detected = detect_project(sample_project_path)
 
     # Assert
-    assert detected_packages is not None
-    assert sorted(detected_packages) == sorted(expected_packages)
+    assert detected is not None
+    assert detected.project_type == ProjectType.DOCKER_COMPOSE
+    assert detected.project_name == "docker_compose_simple"
+    assert sorted(detected.configs) == sorted(expected_configs)
+    assert detected.paths == ["./", "./", "./"]
 
 
-def test_no_detection_in_empty_dir(tmpdir: pytest.TempPathFactory) -> None:
+def test_detects_node_monorepo_project_correctly() -> None:
+    """
+    Tests that the detector finds, parses, and correctly structures
+    a Node.js monorepo project.
+    """
+    # Arrange
+    sample_project_path = (
+        Path(__file__).parent.parent / "sample_projects" / "node_monorepo"
+    )
+    expected_configs = ["frontend", "backend"]
+
+    # Act
+    detected = detect_project(sample_project_path)
+
+    # Assert
+    assert detected is not None
+    assert detected.project_type == ProjectType.NODE_MONOREPO
+    assert detected.project_name == "node_monorepo"
+    assert sorted(detected.configs) == sorted(expected_configs)
+    assert sorted(detected.paths) == sorted(
+        ["./packages/backend", "./packages/frontend"]
+    )
+
+
+def test_no_detection_in_empty_dir(tmp_path: Path) -> None:
     """
     Tests that no project is detected in an empty directory.
+    `tmp_path` is a pytest fixture that provides a temporary Path object.
     """
-    # Arrange
-    empty_dir = str(tmpdir)
-
     # Act
-    docker_result = detect_docker_compose(empty_dir)
-    node_result = detect_node_monorepo(empty_dir)
+    result = detect_project(tmp_path)
 
     # Assert
-    assert docker_result is None
-    assert node_result is None
+    assert result is None

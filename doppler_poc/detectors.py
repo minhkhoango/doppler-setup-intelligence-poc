@@ -1,66 +1,70 @@
 """
 Contains the logic for detecting different project structures.
-These functions represent the work of Day 2 and Day 3.
+
+**REFACTOR:** All `os.path` operations have been replaced with the
+object-oriented `pathlib.Path` for robustness and clarity.
 """
 
 import json
-from typing import List, Optional, Dict, Any
-import yaml
 from pathlib import Path
+from typing import Optional, Dict, Any
+import yaml
+
+from doppler_poc.models import DetectedProject, ProjectType
 
 
-def detect_docker_compose(path: str) -> Optional[List[str]]:
+def detect_project(path: Path) -> Optional[DetectedProject]:
     """
-    Detects if a docker-compose.yml or docker-compose.yaml file exists
-    and extracts the service names from it.
+    Scans a directory and returns the first detected project type.
 
     Args:
-        path: The directory path to scan.
-
-    Returns:
-        A list of service names if found, otherwise None.
+        path: A Path object representing the directory to scan.
     """
+    # .resolve() makes the path absolute, .name gets the final component
+    project_name = path.resolve().name
+
+    # Check for Docker Compose first
     for filename in ["docker-compose.yml", "docker-compose.yaml"]:
-        compose_file_path = Path(path) / filename
+        compose_file_path = path / filename
         if compose_file_path.is_file():
             try:
-                with open(compose_file_path, "r") as f:
-                    compose_data: Dict[str, Any] = yaml.safe_load(f)
-                    if compose_data and "services" in compose_data:
-                        services = list(compose_data["services"].keys())
-                        return services if services else None
+                compose_data: Dict[str, Any] = yaml.safe_load(compose_file_path.read_text())
+                if compose_data and "services" in compose_data:
+                    services = list(compose_data["services"].keys())
+                    if services:
+                        return DetectedProject(
+                            project_type=ProjectType.DOCKER_COMPOSE,
+                            project_name=project_name,
+                            configs=services,
+                            # For Docker Compose, all paths are the root.
+                            paths=["./" for _ in services],
+                        )
             except (yaml.YAMLError, IOError):
-                return None
-    return None
+                continue  # Try the next filename or detector
 
-
-def detect_node_monorepo(path: str) -> Optional[List[str]]:
-    """
-    Detects if a package.json indicates a Node.js monorepo (using workspaces)
-    and extracts the package names.
-
-    Args:
-        path: The directory path to scan.
-
-    Returns:
-        A list of package directory names if found, otherwise None.
-    """
-    package_json_path = Path(path) / "package.json"
+    # Check for Node.js Monorepo
+    package_json_path = path / "package.json"
     if package_json_path.is_file():
         try:
-            with open(package_json_path, "r") as f:
-                package_data: Dict[str, Any] = json.load(f)
-                if "workspaces" in package_data:
-                    workspaces = package_data.get("workspaces", [])
-                    if any("packages/*" in w for w in workspaces):
-                        packages_dir = Path(path) / "packages"
-                        if packages_dir.is_dir():
-                            package_names: List[str] = [
-                                p.name
-                                for p in packages_dir.iterdir()
-                                if p.is_dir()
-                            ]
-                            return package_names if package_names else None
+            package_data: Dict[str, Any] = json.loads(package_json_path.read_text())
+            if "workspaces" in package_data:
+                # For this PoC, we assume a simple "packages/*" structure.
+                workspaces = package_data.get("workspaces", [])
+                if any("packages/*" in w for w in workspaces):
+                    packages_dir = path / "packages"
+                    if packages_dir.is_dir():
+                        package_names = [
+                            p.name for p in packages_dir.iterdir() if p.is_dir()
+                        ]
+                        if package_names:
+                            return DetectedProject(
+                                project_type=ProjectType.NODE_MONOREPO,
+                                project_name=project_name,
+                                configs=package_names,
+                                # For Monorepos, paths are the package subdirectories.
+                                paths=[f"./packages/{name}" for name in package_names],
+                            )
         except (json.JSONDecodeError, IOError):
-            return None
+            pass  # Ignore errors and let it return None
+
     return None
