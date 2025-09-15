@@ -1,0 +1,11 @@
+# This is a sample file for the unit test to discover and parse.
+version: '3.8'
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+  api:
+    image: python:3.9-slim
+    environment:
+      - DATABASE_URL=placeholder
