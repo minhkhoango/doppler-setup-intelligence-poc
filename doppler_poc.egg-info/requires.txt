@@ -1,0 +1,5 @@
+PyYAML
+rich
+
+[dev]
+pytest

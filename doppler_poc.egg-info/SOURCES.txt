@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+doppler_poc/__init__.py
+doppler_poc/api_simulator.py
+doppler_poc/config_generator.py
+doppler_poc/detectors.py
+doppler_poc.egg-info/PKG-INFO
+doppler_poc.egg-info/SOURCES.txt
+doppler_poc.egg-info/dependency_links.txt
+doppler_poc.egg-info/requires.txt
+doppler_poc.egg-info/top_level.txt
+tests/test_detectors.py

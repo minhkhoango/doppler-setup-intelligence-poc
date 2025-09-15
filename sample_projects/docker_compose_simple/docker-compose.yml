@@ -9,3 +9,5 @@ services:
     image: python:3.9-slim
     environment:
       - DATABASE_URL=placeholder
+  worker:
+    image: redis:latest

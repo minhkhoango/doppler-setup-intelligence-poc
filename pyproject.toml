@@ -1,0 +1,17 @@
+[project]
+name = "doppler_poc"
+version = "0.1.0"
+description = "A PoC for Doppler's intelligent setup."
+requires-python = ">=3.8"
+dependencies = [
+"PyYAML",
+"rich",
+]
+
+[project.optional-dependencies]
+dev = [
+"pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
