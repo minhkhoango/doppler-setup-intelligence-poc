@@ -1,54 +1,51 @@
-# Doppler Setup Intelligence (PoC)
+# Doppler Setup Intelligence (Proof-of-Concept)
 
-An intelligent onboarding engine for the Doppler CLI that automatically detects project architecture and generates configuration in seconds.
+A proof-of-concept CLI that intelligently detects a project's architecture and generates a perfect Doppler configuration in seconds.
 
-**Objective:** Remove onboarding friction and reduce Time-to-Value from minutes/hours to under 90 seconds.
+The goal of this PoC is to demonstrate a feature that can reduce a developer's Time-to-Value with Doppler from minutes or hours to under 90 seconds.
 
-## Problem
+---
 
-Doppler's CLI setup creates significant friction for complex applications. Developers must manually:
-- Read extensive documentation
-- Identify services needing secrets  
-- Run multiple CLI commands
-- Create doppler.yaml files
+## See It In Action
 
-This undermines the "Time to Wow" moment and slows Product-Led Growth.
+<img src="assets/showcase.gif" alt="Doppler Setup Intelligence Demo" width="80%" style="max-width: 600px;">
 
-## Solution
+---
 
-Transforms `doppler setup` into an intelligent assistant that inspects projects, detects architecture, and generates perfect configuration.
+## The Value: From Friction to "Wow"
 
-## Features
+| Problem: The Current Onboarding Friction | Solution: Intelligent, Zero-Config Setup |
+|---------------------------------------------|---------------------------------------------|
+| Developers must read extensive documentation. | Automatically detects `docker-compose`, `monorepos`, etc. |
+| Manually create configs for every service.   | Proposes a best-practice setup for the project. |
+| Risk of typos and incorrect `doppler.yaml` paths. | Generates a perfect, working `doppler.yaml`. |
 
-- **Automatic Detection:** Scans for docker-compose.yml and package.json workspaces
-- **Smart Configuration:** Creates separate Doppler configs per service/package
-- **Interactive Confirmation:** Shows plan and waits for approval before proceeding
-- **YAML Generation:** Produces properly formatted doppler.yaml files
+This PoC transforms a key point of friction into a competitive advantage, directly accelerating user activation and reinforcing Doppler's core promise of superior Developer Experience.
+
+---
 
 ## Quick Start
 
+### Clone & Install
 ```bash
-# Clone and setup
 git clone https://github.com/your-username/doppler-setup-intelligence-poc.git
 cd doppler-setup-intelligence-poc
+
+# Create venv and install project in editable mode
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-
-# Run from sample project
-cd sample_projects/docker_compose_simple/
-python ../../main.py
 ```
 
-## Scope
+### Run the Tests
+```bash
+pytest
+```
 
-**IN SCOPE:**
-- Docker Compose detection
-- Node.js monorepo support  
-- doppler.yaml generation
-- CLI experience
+### Run on a Sample Project
+```bash
+# Navigate to a sample project
+cd sample_projects/docker_compose_simple/
 
-**OUT OF SCOPE:**
-- Other languages (Go, Python, Ruby)
-- Advanced configs (branches, custom naming)
-- Kubernetes/Terraform/CI integration
-- .env migration
+# Run the intelligence engine
+python ../../main.py
+```

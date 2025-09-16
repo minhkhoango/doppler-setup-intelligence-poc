@@ -5,6 +5,11 @@ orchestrates the full Look -> Recognize -> Ask -> Act loop.
 
 from pathlib import Path
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.prompt import Confirm
+
 from doppler_poc.detectors import detect_project
 from doppler_poc.api_simulator import simulate_api_calls
 from doppler_poc.config_generator import generate_doppler_yaml
@@ -14,49 +19,96 @@ from doppler_poc.models import DetectedProject
 def main() -> None:
     """
     Executes the main logic of the proof-of-concept.
+
+    This function handles the user-facing presentation, confirmation flow,
+    and orchestration of the backend logic (detection, generation, etc.).
     """
-    print("🚀 Doppler Setup Intelligence PoC - Initializing...")
+    console = Console()
+    console.print(
+        Panel(
+            "[bold cyan]Doppler Setup Intelligence (PoC)[/bold cyan]",
+            title="🚀 Initializing",
+            border_style="green",
+        )
+    )
     current_path = Path.cwd()
 
-    # LOOK & RECOGNIZE (Refactored)
-    print(f"Scanning directory: {current_path}")
-    detected_project: DetectedProject | None = detect_project(current_path)
+    # --- 1. LOOK & RECOGNIZE ---
+    with console.status(
+        f"Scanning for project structure in [yellow]{current_path}[/yellow]..."
+    ):
+        detected_project: DetectedProject | None = detect_project(current_path)
 
     if not detected_project:
-        print("❌ No recognizable project structure found. Exiting.")
+        console.print(
+            "[bold red]❌ Error:[/bold red] No recognizable project structure found. Exiting."
+        )
         return
 
-    # ASK
-    print(f"✅ Detected {detected_project.project_type.name} project.")
-    print("\nProposed Doppler Structure:")
-    print(f"  Project: {detected_project.project_name}")
-    print("  Configs:")
+    # --- 2. ASK ---
+    # Build a readable summary of the proposed changes for the user.
+    proposal = f"[bold]Project:[/bold] {detected_project.project_name}\n"
+    proposal += "[bold]Configs:[/bold]\n"
     for config, path in zip(detected_project.configs, detected_project.paths):
-        print(f"    - {config} (path: {path})")
+        proposal += f"  - [cyan]{config}[/cyan] (path: [magenta]{path}[/magenta])"
 
+    console.print(
+        Panel(
+            proposal,
+            title="[yellow]Proposed Doppler Structure[/yellow]",
+            border_style="blue",
+            padding=(1, 2),
+        )
+    )
+
+    # Use a rich Confirm prompt for a better UX than plain input().
     try:
-        confirm = input("\nProceed with this setup? (Y/n): ").lower().strip()
-    except (EOFError, KeyboardInterrupt):
-        print("\nAborted by user.")
+        if not Confirm.ask("\n[bold]Proceed with this setup?[/bold]", default=True):
+            console.print("[yellow]↪️ Setup cancelled by user. Exiting.[/yellow]")
+            return
+    except (KeyboardInterrupt):
+        console.print("\n[yellow]↪️ Setup cancelled by user. Exiting.[/yellow]")
         return
 
-    if confirm not in ["y", "yes", ""]:
-        print("❌ Setup cancelled by user. Exiting.")
-        return
+    # --- 3. ACT ---
+    console.print("\n[bold green]👍 Confirmation received. Starting setup...[/bold green]")
+    
+    # Simulate API calls and display them to the user.
+    api_simulation_output = simulate_api_calls(
+        detected_project.project_name, detected_project.configs
+    )
+    console.print(
+        Panel(
+            api_simulation_output,
+            title="[yellow]API Call Simulation[/yellow]",
+            border_style="dim blue",
+        )
+    )
 
-    # ACT
-    print("\n👍 Confirmation received. Starting setup...")
-    simulate_api_calls(detected_project.project_name, detected_project.configs)
-
+    # Generate the YAML file.
     yaml_content = generate_doppler_yaml(detected_project)
     output_filepath = current_path / "doppler.yaml"
+
     try:
         output_filepath.write_text(yaml_content)
-        print(f"✅ Successfully generated '{output_filepath.name}'!")
-        print("\nTo get started, run: doppler run -- <your_command>")
+        console.print(
+            f"[bold green]✅ Success:[/bold green] Generated '[bold cyan]{output_filepath.name}[/bold cyan]'!"
+        )
+
+        # Display the generated file with syntax highlighting.
+        console.print(
+            Panel(
+                Syntax(yaml_content, "yaml", theme="monokai", line_numbers=True),
+                title=f"Contents of {output_filepath.name}",
+                border_style="green",
+            )
+        )
+        console.print(
+            "\n[bold]To get started, run: [cyan]doppler run -- <your_command>[/cyan][/bold]"
+        )
 
     except IOError as e:
-        print(f"🔥 Error writing to file: {e}")
+        console.print(f"[bold red]🔥 Error:[/bold red] Could not write to file: {e}")
 
 
 if __name__ == "__main__":

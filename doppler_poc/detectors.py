@@ -1,8 +1,5 @@
 """
 Contains the logic for detecting different project structures.
-
-**REFACTOR:** All `os.path` operations have been replaced with the
-object-oriented `pathlib.Path` for robustness and clarity.
 """
 
 import json
